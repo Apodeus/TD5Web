@@ -1,7 +1,13 @@
 package fr.ub.m2gl;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class User {
+
+    @JsonProperty("NamePerso")
     private String firstName;
+
+    //@JsonProperty("NamePerso2")
     private String lastName;
 
     public String getFirstName() {

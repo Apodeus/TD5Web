@@ -6,9 +6,19 @@ import javax.ws.rs.Produces;
 
 @Path("/hello")
 public class HelloWorldResource {
+
+    public final UserResource userResource;
+
+    public HelloWorldResource(){
+        this.userResource = new UserResource();
+    }
+
     @GET
     @Produces("text/plain")
     public String getHelloWorld() {
-        return "Hello World from text/plain";
+        User user = new User();
+        user.setFirstName("Romain");
+        user.setLastName("Ordo");
+        return userResource.convertUserToJSON(user);
     }
 }
