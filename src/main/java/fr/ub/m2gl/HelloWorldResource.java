@@ -19,6 +19,10 @@ public class HelloWorldResource {
         User user = new User();
         user.setFirstName("Romain");
         user.setLastName("Ordo");
-        return userResource.convertUserToJSON(user);
+
+        String result = userResource.convertUserToJSON(user);
+//        User nu = userResource.convertJSONToUser(result);
+//        result = result + nu.getFirstName() + nu.getLastName();
+        return result;
     }
 }

@@ -7,7 +7,7 @@ public class User {
     @JsonProperty("NamePerso")
     private String firstName;
 
-    //@JsonProperty("NamePerso2")
+    @JsonProperty("NamePerso2")
     private String lastName;
 
     public String getFirstName() {
