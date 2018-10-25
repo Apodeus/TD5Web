@@ -5,12 +5,22 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.BsonDocument;
+import org.bson.BsonReader;
+import org.bson.BsonWriter;
 import org.bson.Document;
+import org.bson.codecs.Codec;
+import org.bson.codecs.DecoderContext;
+import org.bson.codecs.EncoderContext;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.conversions.Bson;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.mongodb.client.model.Projections.excludeId;
 
 @Path("/user")
 public class UserResource {
@@ -54,26 +64,29 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<User> getAllUsers(){
         try (MongoClient mongoClient = new MongoClient()) {
+
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
             MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
-            FindIterable<Document> documents = collection.find();
+            FindIterable<Document> documents = collection.find().projection(excludeId());
             List<User> allUsers = new ArrayList<>();
             for(Document doc : documents){
+            	System.out.println(doc.toJson());
                 User user = mapper.readValue(doc.toJson(), User.class);
                 allUsers.add(user);
             }
 
             return allUsers;
         } catch(Exception e){
-            throw new RuntimeException("Error : trying to add invalid user.");
+            throw new RuntimeException("Error : trying to add invalid user.", e);
         }
     }
 
     @POST
     @Path("/add")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public String addUser(User user){
-        return addUserToBDD(user);
+    //@Consumes(MediaType.APPLICATION_JSON)
+    public String addUser(@FormParam("fname") String fname, @FormParam("lname") String lname){
+        User u = new User(fname, lname);
+        return addUserToBDD(u);
     }
 
     private String addUserToBDD(User user) {
