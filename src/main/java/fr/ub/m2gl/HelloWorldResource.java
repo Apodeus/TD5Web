@@ -16,13 +16,6 @@ public class HelloWorldResource {
     @GET
     @Produces("text/plain")
     public String getHelloWorld() {
-        User user = new User();
-        user.setFirstName("Romain");
-        user.setLastName("Ordo");
-
-        String result = userResource.convertUserToJSON(user);
-//        User nu = userResource.convertJSONToUser(result);
-//        result = result + nu.getFirstName() + nu.getLastName();
-        return result;
+        return "hello world !";
     }
 }
