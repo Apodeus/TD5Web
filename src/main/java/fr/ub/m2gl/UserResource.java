@@ -82,7 +82,7 @@ public class UserResource {
 
     @GET
     @Path("/delete")
-    public String getUser(@QueryParam("_id") @DefaultValue("") String id) {
+    public String deleteUser(@QueryParam("_id") @DefaultValue("") String id) {
         try (MongoClient mongoClient = new MongoClient()) {
 
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
@@ -110,18 +110,6 @@ public class UserResource {
         }
     }
 
-    /**
-     * Save an User in MongoDB
-     * @param user-
-     * @return a message to display
-     */
-    @POST
-    @Path("/add")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public String addUserJson(User user){
-        return add(user);
-    }
-
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -139,6 +127,14 @@ public class UserResource {
         }
     }
 
+    /**
+     * Save an User in MongoDB
+     * @param user-
+     * @return a message to display
+     */
+    @POST
+    @Path("/add")
+    @Consumes(MediaType.APPLICATION_JSON)
     public String add(User user) {
 			try(MongoClient mongoClient = new MongoClient()) {
             MongoDatabase db = mongoClient.getDatabase(DB_NAME);
