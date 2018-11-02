@@ -16,7 +16,7 @@ import java.util.List;
 
 import static java.text.MessageFormat.format;
 
-@Path("/user")
+@Path("/users")
 public class UserResource {
 
     public static final String DB_NAME = "myBase";
@@ -27,16 +27,20 @@ public class UserResource {
         this.mapper = new ObjectMapper();
     }
 
-    @GET
-    @Path("/init")
-    public String init() {
-        add(new User("Adrien", "Halnaut"));
-        add(new User("Romain", "Ordonez"));
-        return "Yay !";
-    }
+//    @GET
+//    @Path("/init")
+//    public String init() {
+//        add(new User("Adrien", "Halnaut"));
+//        add(new User("Romain", "Ordonez"));
+//        return "Yay !";
+//    }
 
+
+	/**
+	 * Return all of the users stored in the database. Can be called using GET method on "/users".
+	 * @return users stored on the database.
+	 */
     @GET
-    @Path("/list")
     @Produces(MediaType.APPLICATION_JSON)
     public List<User> getAllUsers() {
         try (MongoClient mongoClient = new MongoClient()) {
@@ -54,14 +58,21 @@ public class UserResource {
 
             return allUsers;
         } catch (Exception e) {
-            throw new RuntimeException("Error : trying to add invalid user.", e);
+            throw new RuntimeException("Error while trying to fetch user list.", e);
         }
     }
 
+	/**
+	 * Search for specific users using their fields. Can be called using GET method on "/users/find?[params]".
+	 * @param fname firstName field.
+	 * @param lname lastName field.
+	 * @param id _id field.
+	 * @return the users matching the request.
+	 */
     @GET
-    @Path("/getUser")
+	@Path("/find")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<User> getUser(@QueryParam("firstName") @DefaultValue("") String fname, @QueryParam("lastName") @DefaultValue("") String lname, @QueryParam("_id") @DefaultValue("") String id) {
+    public List<User> find(@QueryParam("firstName") @DefaultValue("") String fname, @QueryParam("lastName") @DefaultValue("") String lname, @QueryParam("_id") @DefaultValue("") String id) {
         try (MongoClient mongoClient = new MongoClient()) {
 
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
@@ -76,62 +87,95 @@ public class UserResource {
 
             return allUsers;
         } catch (Exception e) {
-            throw new RuntimeException("Error : trying to add invalid user.", e);
+            throw new RuntimeException("Error while searching an user.", e);
         }
     }
 
-    @GET
-    @Path("/delete")
-    public String deleteUser(@QueryParam("_id") @DefaultValue("") String id) {
+	/**
+	 * Delete an user from a given id. Can be called using the DELETE method on "/users/[id]".
+	 * @param id the id of the user to remove.
+	 * @return a String reporting if the operation was successful or not.
+	 */
+	@DELETE
+    @Path("/{id}")
+    public String deleteUser(@PathParam("id") @DefaultValue("") String id) {
+    	if (id.equals(""))
+    		return "Invalid request";
         try (MongoClient mongoClient = new MongoClient()) {
 
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
             MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
             FindIterable<Document> documents = collection.find(Filters.eq("_id", id));
-            Document userDocument = null;
-            User user = null;
-            for (Document doc : documents) {
-                user = mapper.readValue(doc.toJson(), User.class);
-                userDocument = doc;
-            }
+            if (!documents.iterator().hasNext()) {
+				return "There is no user in database with id " + id;
+			}
 
-            if(user == null){
-                return "There is no user in database with this id : " + id;
-            }
+			Document userDocument = documents.first();
+			User user = mapper.readValue(userDocument.toJson(), User.class);
 
             String firstname = user.getFirstName();
             String lastname = user.getLastName();
 
             collection.deleteOne(userDocument);
 
-            return format("User {0} {1} has been removed from database !", firstname, lastname);
+            return format("User {0} {1} has been removed from database.", firstname, lastname);
         } catch (Exception e) {
-            throw new RuntimeException("Error : trying to add invalid user.", e);
+            throw new RuntimeException("Error while removing an user.", e);
         }
     }
 
-    @PUT
-    @Path("/{id}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public String update(@PathParam("id") String id, User user){
-        try (MongoClient mongoClient = new MongoClient()) {
+	/**
+	 * Update user information stored in the database from a given dummy user object. The _id field cannot be changed though.
+	 * Can be called using PUT method on "/users/[id]".
+	 * @param id The id of the user to update.
+	 * @param user The dummy object containing the new information. _id field can be omitted on this one.
+	 * @return a String reporting if the operation was successful or not.
+	 */
+	@PUT
+	@Path("/{id}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public String update(@PathParam("id") String id, User user){
+		try (MongoClient mongoClient = new MongoClient()) {
 
-            MongoDatabase database = mongoClient.getDatabase(DB_NAME);
-            MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
-            BasicDBObject updatedValues = new BasicDBObject();
-            updatedValues.append("$set", new BasicDBObject().append("firstName", user.getFirstName()).append("lastName", user.getLastName()));
-            collection.updateOne(Filters.eq("_id", id), updatedValues);
-            return collection.find(Filters.eq("_id", id)).first().toJson();
-        } catch(Exception e){
-            throw new RuntimeException("Error : trying to add invalid user.", e);
-        }
-    }
+			MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+			MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
+			BasicDBObject updatedValues = new BasicDBObject();
+			updatedValues.append("$set", new BasicDBObject().append("firstName", user.getFirstName()).append("lastName", user.getLastName()));
+			collection.updateOne(Filters.eq("_id", id), updatedValues);
+			return collection.find(Filters.eq("_id", id)).first().toJson();
+		} catch(Exception e){
+			throw new RuntimeException("Error while updating user data.", e);
+		}
+	}
 
-    /**
-     * Save an User in MongoDB
-     * @param user-
-     * @return a message to display
-     */
+	/**
+	 * Get a user from a given id.
+	 * @param id the id of the user to get.
+	 * @return the user matching the id. null if no one is matching.
+	 */
+	@GET
+	@Path("/{id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public User get(@PathParam("id") String id){
+		try (MongoClient mongoClient = new MongoClient()) {
+
+			MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+			MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
+			FindIterable<Document> docs = collection.find(Filters.eq("_id", id));
+			if (!docs.iterator().hasNext())
+				return null;
+
+			return mapper.readValue(docs.first().toJson(), User.class);
+		} catch(Exception e){
+			throw new RuntimeException("Error while looking for user.", e);
+		}
+	}
+
+	/**
+	 * Add a new user in the database.
+	 * @param user the user to insert in the database.
+	 * @return a String reporting if the operation was successful or not.
+	 */
     @POST
     @Path("/add")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -142,7 +186,7 @@ public class UserResource {
             String jsonString = mapper.writeValueAsString(user);
             Document doc = Document.parse(jsonString);
             collection.insertOne(doc);
-            return "Utilisateur " + user.getFirstName() + " " + user.getLastName() + " added successfully.";
+            return "User " + user.getFirstName() + " " + user.getLastName() + " added successfully.";
         } catch (Exception e) {
             throw new RuntimeException("Error : trying to add invalid user.");
         }
