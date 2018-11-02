@@ -74,13 +74,19 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<User> find(@QueryParam("firstName") @DefaultValue("") String fname, @QueryParam("lastName") @DefaultValue("") String lname, @QueryParam("_id") @DefaultValue("") String id) {
         try (MongoClient mongoClient = new MongoClient()) {
-
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
             MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
-            FindIterable<Document> documents = collection.find(Filters.eq("firstName", fname));
+			BasicDBObject query = new BasicDBObject();
+
+			if (!fname.isEmpty())
+				query.append("firstName", fname);
+			if (!lname.isEmpty())
+				query.append("lastName", lname);
+			if (!id.isEmpty())
+				query.append("_id", id);
+            FindIterable<Document> documents = collection.find(query);
             List<User> allUsers = new ArrayList<>();
             for (Document doc : documents) {
-                System.out.println(doc.toJson());
                 User user = mapper.readValue(doc.toJson(), User.class);
                 allUsers.add(user);
             }
@@ -99,8 +105,6 @@ public class UserResource {
 	@DELETE
     @Path("/{id}")
     public String deleteUser(@PathParam("id") @DefaultValue("") String id) {
-    	if (id.equals(""))
-    		return "Invalid request";
         try (MongoClient mongoClient = new MongoClient()) {
 
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
