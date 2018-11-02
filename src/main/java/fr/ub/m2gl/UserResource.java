@@ -86,7 +86,7 @@ public class UserResource {
     @GET
     @Path("/getUser")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<User> getUser(@QueryParam("fname") @DefaultValue("") String fname, @QueryParam("lastName") @DefaultValue("") String lname, @QueryParam("_id") @DefaultValue("") String id){
+    public List<User> getUser(@QueryParam("firstName") @DefaultValue("") String fname, @QueryParam("lastName") @DefaultValue("") String lname, @QueryParam("_id") @DefaultValue("") String id){
         try (MongoClient mongoClient = new MongoClient()) {
 
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
