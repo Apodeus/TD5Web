@@ -112,7 +112,7 @@ public class UserResource {
 
     /**
      * Save an User in MongoDB
-     * @param user
+     * @param user-
      * @return a message to display
      */
     @POST
