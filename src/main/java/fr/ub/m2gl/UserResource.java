@@ -16,7 +16,7 @@ import java.util.List;
 
 import static java.text.MessageFormat.format;
 
-@Path("/users")
+@Path("/user")
 public class UserResource {
 
     public static final String DB_NAME = "myBase";
@@ -181,7 +181,6 @@ public class UserResource {
 	 * @return a String reporting if the operation was successful or not.
 	 */
     @POST
-    @Path("/add")
     @Consumes(MediaType.APPLICATION_JSON)
     public String add(User user) {
 			try(MongoClient mongoClient = new MongoClient()) {
