@@ -5,6 +5,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import org.bson.BsonDocument;
 import org.bson.BsonReader;
 import org.bson.BsonWriter;
@@ -67,10 +68,33 @@ public class UserResource {
 
             MongoDatabase database = mongoClient.getDatabase(DB_NAME);
             MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
+
             FindIterable<Document> documents = collection.find().projection(excludeId());
             List<User> allUsers = new ArrayList<>();
             for(Document doc : documents){
-            	System.out.println(doc.toJson());
+                System.out.println(doc.toJson());
+                User user = mapper.readValue(doc.toJson(), User.class);
+                allUsers.add(user);
+            }
+
+            return allUsers;
+        } catch(Exception e){
+            throw new RuntimeException("Error : trying to add invalid user.", e);
+        }
+    }
+
+    @GET
+    @Path("/getUser")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<User> getUser(@QueryParam("fname") @DefaultValue("") String fname, @QueryParam("lastName") @DefaultValue("") String lname, @QueryParam("_id") @DefaultValue("") String id){
+        try (MongoClient mongoClient = new MongoClient()) {
+
+            MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+            MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
+            FindIterable<Document> documents = collection.find(Filters.eq("firstName", fname));
+            List<User> allUsers = new ArrayList<>();
+            for(Document doc : documents){
+                System.out.println(doc.toJson());
                 User user = mapper.readValue(doc.toJson(), User.class);
                 allUsers.add(user);
             }
@@ -89,6 +113,13 @@ public class UserResource {
         return addUserToBDD(u);
     }
 
+    @POST
+    @Path("/addp")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public String addUserJson(User user){
+        return addUserToBDD(user);
+    }
+
     private String addUserToBDD(User user) {
         try(MongoClient mongoClient = new MongoClient()) {
             MongoDatabase db = mongoClient.getDatabase(DB_NAME);
@@ -96,7 +127,6 @@ public class UserResource {
             String jsonString = mapper.writeValueAsString(user);
             Document doc = Document.parse(jsonString);
             collection.insertOne(doc);
-
             return "Utilisateur " + user.getFirstName() + " " + user.getLastName() + " added successfully.";
         } catch (Exception e) {
             throw new RuntimeException("Error : trying to add invalid user.");
