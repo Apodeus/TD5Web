@@ -1,6 +1,7 @@
 package fr.ub.m2gl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -117,8 +118,29 @@ public class UserResource {
     @POST
     @Path("/add")
     @Consumes(MediaType.APPLICATION_JSON)
-    public String add(User user) {
+    public String addUserJson(User user){
+        return add(user);
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public String update(@PathParam("id") String id, User user){
         try (MongoClient mongoClient = new MongoClient()) {
+
+            MongoDatabase database = mongoClient.getDatabase(DB_NAME);
+            MongoCollection<Document> collection = database.getCollection(DB_COLLECTION);
+            BasicDBObject updatedValues = new BasicDBObject();
+            updatedValues.append("$set", new BasicDBObject().append("firstName", user.getFirstName()).append("lastName", user.getLastName()));
+            collection.updateOne(Filters.eq("_id", id), updatedValues);
+            return collection.find(Filters.eq("_id", id)).first().toJson();
+        } catch(Exception e){
+            throw new RuntimeException("Error : trying to add invalid user.", e);
+        }
+    }
+
+    public String add(User user) {
+			try(MongoClient mongoClient = new MongoClient()) {
             MongoDatabase db = mongoClient.getDatabase(DB_NAME);
             MongoCollection<Document> collection = db.getCollection(DB_COLLECTION);
             String jsonString = mapper.writeValueAsString(user);
